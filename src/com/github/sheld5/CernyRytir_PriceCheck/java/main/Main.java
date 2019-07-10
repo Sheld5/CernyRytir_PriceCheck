@@ -1,9 +1,11 @@
-package com.github.sheld5.CernyRytir_PriceCheck.main;
+package com.github.sheld5.CernyRytir_PriceCheck.java.main;
 
+import com.github.sheld5.CernyRytir_PriceCheck.java.util.Resources;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import javax.swing.*;
 import java.io.*;
 import java.util.regex.Pattern;
 
@@ -14,12 +16,31 @@ public class Main {
     private static final String DEFAULT_URL_3 = "&hledej_pouze_magic=1&submit=Vyhledej";
     private static final String QUANTITY_REGEX = "^[0-9]+[x]?$";
 
-    public static void main(String[] args) {
-        
+    private static final String FRAME_TITLE = "   \"Černý Rytíř\" deck price calculator";
+    private static final int DEFAULT_WIDTH = 500;
+    private static final int DEFAULT_HEIGHT = 500;
 
+    private static JFrame frame;
+    private static com.github.sheld5.CernyRytir_PriceCheck.java.main.Menu menu;
+
+    public static void main(String[] args) {
+        Resources.load();
+        initFrame();
+        menu = new com.github.sheld5.CernyRytir_PriceCheck.java.main.Menu();
+        frame.add(menu);
+        frame.revalidate();
     }
 
-    private static int getTotalPrice(String cardList) {
+    private static void initFrame() {
+        frame = new JFrame(FRAME_TITLE);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(true);
+        frame.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        frame.setIconImage(Resources.windowIcon);
+        frame.setVisible(true);
+    }
+
+    public static int getTotalPrice(String cardList) {
         // Create String[] of all cards and int[] of their quantities
         Pattern pattern = Pattern.compile(QUANTITY_REGEX);
         String[] list = cardList.split("\n");
