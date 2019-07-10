@@ -35,7 +35,7 @@ class Menu extends JPanel {
         add(price, c);
 
 
-        textArea = new JTextArea("paste your decklist here");
+        textArea = new JTextArea("");
         scrollPane = new JScrollPane(textArea);
         scrollPane.setBackground(Color.black);
         scrollPane.setPreferredSize(new Dimension(250, 150));

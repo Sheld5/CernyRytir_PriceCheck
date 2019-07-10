@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project basedir="." name="CernyRytir_PriceCheck" default="main">
+    <target name="main"
+            depends="clean,jar"
+            description="Default target: create executable JAR."
+    >
+    </target>
+
+    <target name="compile"
+            description="Compile application code."
+    >
+        <mkdir dir="out/production/CernyRytir_PriceCheck" />
+        <javac
+                encoding="utf-8"
+                destdir="out/production/CernyRytir_PriceCheck"
+                debug="true"
+                includeantruntime="false">
+            <src path="src" />
+            <compilerarg value="-Xlint:all"/>
+            <classpath>
+                <pathelement path="lib/jsoup-1.12.1.jar"/>
+            </classpath>
+        </javac>
+        <copy todir="out/production/CernyRytir_PriceCheck" >
+            <fileset dir="src/com/github/sheld5/CernyRytir_PriceCheck/resources" includes="**"/>
+        </copy>
+    </target>
+
+    <target name="jar"
+            depends="compile"
+            description="Build application JAR.">
+        <mkdir dir="out/artifacts/CernyRytir_PriceCheck_jar" />
+        <jar destfile="out/artifacts/CernyRytir_PriceCheck_jar/CernyRytir_PriceCheck.jar">
+            <fileset dir="out/production/CernyRytir_PriceCheck" includes="**" />
+            <zipgroupfileset dir="lib" includes="jsoup-1.12.1.jar" />
+            <manifest>
+                <attribute name="Main-Class" value="com.github.sheld5.CernyRytir_PriceCheck.java.main.Main" />
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="clean"
+            description="Remove generated files."
+    >
+        <delete dir="out" />
+    </target>
+</project>
