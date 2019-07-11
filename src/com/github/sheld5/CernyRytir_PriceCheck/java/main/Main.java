@@ -47,18 +47,25 @@ public class Main {
         int[] quantities = new int[list.length];
         for (int i = 0; i < list.length; i++) {
             String[] words = list[i].split(" ");
+            for (String word : words) {
+                word.replace(" ", "");
+            }
             if (pattern.matcher(words[0]).matches()) {
                 quantities[i] = Integer.parseInt(words[0].replace("x", ""));
-                list[i] = "";
-                for (int o = 1; o < words.length; o++) {
-                    if (o == 1) {
-                        list[i] += words[o];
-                    } else {
-                        list[i] += " " + words[o];
-                    }
-                }
             } else {
                 quantities[i] = 1;
+            }
+            list[i] = "";
+            for (String word : words) {
+                if (pattern.matcher(word).matches() || word.equals("")) {
+                    // nada
+                } else {
+                    if (list[i].equals("")) {
+                        list[i] = word;
+                    } else {
+                        list[i] += " " + word;
+                    }
+                }
             }
         }
 
@@ -67,8 +74,7 @@ public class Main {
             try {
                 priceTotal += quantities[i] * getCardPrice(list[i]);
             } catch (IOException e) {
-                System.out.println("ERROR: Could not find price for card \"" + list[i] + "\"");
-                System.out.println("The card has been excluded from the total calculated price.");
+                throwError(list[i]);
             }
         }
         return priceTotal;
@@ -76,12 +82,20 @@ public class Main {
 
     // Finds the last page of the printings of the card and returns the last price on that page. (That is the lowest price on "cernyrytir.cz".)
     private static int getCardPrice(String card) throws IOException {
+        if (card.equals("")) {
+            return 0;
+        }
         int page = 0;
         String cardName = normalizeCardName(card);
         Document doc = Jsoup.connect(DEFAULT_URL_1 + (page * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
         Elements ele = doc.getElementsByAttributeValue("class", "kusovkytext");
         if (ele.size() == 2) {
-            return Integer.parseInt(ele.get(1).getElementsByTag("tr").last().getElementsByTag("td").get(2).text().replace(" Kč", ""));
+            if (doc.getElementsByAttributeValue("class", "highslide").size() == 0) {
+                throwError(card);
+                return 0;
+            } else {
+                return Integer.parseInt(ele.get(1).getElementsByTag("tr").last().getElementsByTag("td").get(2).text().replace(" Kč", ""));
+            }
         } else {
             while (true) {
                 doc = Jsoup.connect(DEFAULT_URL_1 + ((page + 1) * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
@@ -102,6 +116,12 @@ public class Main {
         card = card.replace(" ", "%20");
         card = card.replace("'", "%B4");
         return card;
+    }
+
+    private static void throwError(String card) {
+        System.out.println("ERROR: Could not find card \"" + card + "\"");
+        System.out.println("The card has been excluded from the total calculated price.");
+        menu.addError("Could not find card \"" + card + "\"");
     }
 
 }
