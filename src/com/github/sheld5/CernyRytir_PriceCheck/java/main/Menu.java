@@ -7,12 +7,15 @@ class Menu extends JPanel {
 
     private JLabel label;
     private JLabel price;
+    private JPanel scrollPanel;
+    private JScrollPane outputScrollPane;
     private JLabel output;
     private Font font;
-    private JScrollPane scrollPane;
+    private JScrollPane textScrollPane;
     private JTextArea textArea;
     private JButton submit;
 
+    private int successCount;
     private int errorCount;
     private String errors;
 
@@ -34,59 +37,79 @@ class Menu extends JPanel {
         c.gridy = 0;
         add(label, c);
 
-        price = new JLabel("Price: ___ Kč");
+        price = new JLabel("Price: 0 Kč");
         price.setFont(font);
         price.setForeground(Color.white);
         c.weighty = 1;
         c.gridy = 1;
         add(price, c);
 
-        output = new JLabel("<html>Errors: 0");
-        output.setForeground(Color.white);
-        c.weighty = 1;
-        c.gridy = 2;
-        add(output, c);
+        scrollPanel = new JPanel();
+        scrollPanel.setLayout(new GridBagLayout());
+        scrollPanel.setPreferredSize(new Dimension(480, 240));
+        GridBagConstraints d = new GridBagConstraints();
+        d.ipadx = 10;
+
+        output = new JLabel("<html>Successful: 0<br>Errors: 0");
+        output.setForeground(Color.black);
+        outputScrollPane = new JScrollPane(output);
+        outputScrollPane.setBackground(Color.black);
+        outputScrollPane.setPreferredSize(new Dimension(220, 220));
+        d.gridx = 0;
+        scrollPanel.add(outputScrollPane, d);
 
         textArea = new JTextArea("");
-        scrollPane = new JScrollPane(textArea);
-        scrollPane.setBackground(Color.black);
-        scrollPane.setPreferredSize(new Dimension(250, 150));
+        textScrollPane = new JScrollPane(textArea);
+        textScrollPane.setBackground(Color.black);
+        textScrollPane.setPreferredSize(new Dimension(220, 220));
+        d.gridx = 1;
+        scrollPanel.add(textScrollPane, d);
+
         c.weighty = 5;
-        c.gridy = 3;
-        add(scrollPane, c);
+        c.gridy = 2;
+        add(scrollPanel, c);
 
         submit = new JButton("Submit");
         submit.addActionListener(e -> submit());
         c.weighty = 1;
-        c.gridy = 4;
+        c.gridy = 3;
         add(submit, c);
 
     }
 
     private void submit() {
         clearErrors();
-        price.setText("Price: ___ Kč");
+        price.setText("Price: 0 Kč");
         price.setText("Price: " + Main.getTotalPrice(textArea.getText()) + " Kč");
         if (errorCount > 0) {
-            errors += "<br>Prices of these cards have not been included in the total price.";
+            errors += "<br><br>Prices of these cards have not been included in the total price.";
             updateErrors();
         }
     }
 
     public void addError(String error) {
         errorCount++;
-        errors += "<br>" + error;
+        if (errors.equals("")) {
+            errors += "<br><br>Errors while loading prices for:<br>";
+        }
+        errors += "<br>" + "  " + error;
+        updateErrors();
+    }
+
+    public void success(int quantity) {
+        successCount += quantity;
         updateErrors();
     }
 
     private void clearErrors() {
+        successCount = 0;
         errorCount = 0;
         errors = "";
         updateErrors();
     }
 
     private void updateErrors() {
-        output.setText("<html>Errors: " + errorCount + "<br>" + errors);
+        output.setText("<html>Successful: " + successCount + "<br>Errors: " + errorCount + errors);
     }
 
 }

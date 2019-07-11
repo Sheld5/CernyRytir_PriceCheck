@@ -34,7 +34,7 @@ public class Main {
     private static void initFrame() {
         frame = new JFrame(FRAME_TITLE);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setResizable(true);
+        frame.setResizable(false);
         frame.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         frame.setIconImage(Resources.windowIcon);
         frame.setVisible(true);
@@ -43,12 +43,19 @@ public class Main {
     public static int getTotalPrice(String cardList) {
         // Create String[] of all cards and int[] of their quantities
         Pattern pattern = Pattern.compile(QUANTITY_REGEX);
+        Pattern spaces = Pattern.compile(" +");
         String[] list = cardList.split("\n");
         int[] quantities = new int[list.length];
         for (int i = 0; i < list.length; i++) {
+            if (spaces.matcher(list[i]).matches()) {
+                list[i] = "";
+            }
             String[] words = list[i].split(" ");
-            for (String word : words) {
-                word.replace(" ", "");
+            for (int o = 0; o < words.length; o++) {
+                words[o].replace(" ", "");
+                if (words[o].equals("/")) {
+                    words[o] = "//";
+                }
             }
             if (pattern.matcher(words[0]).matches()) {
                 quantities[i] = Integer.parseInt(words[0].replace("x", ""));
@@ -70,9 +77,14 @@ public class Main {
         }
 
         int priceTotal = 0;
+        int previousTotal = 0;
         for (int i = 0; i < list.length; i++) {
             try {
                 priceTotal += quantities[i] * getCardPrice(list[i]);
+                if (priceTotal > previousTotal) {
+                    menu.success(quantities[i]);
+                }
+                previousTotal = priceTotal;
             } catch (IOException e) {
                 throwError(list[i]);
             }
@@ -121,7 +133,7 @@ public class Main {
     private static void throwError(String card) {
         System.out.println("ERROR: Could not find card \"" + card + "\"");
         System.out.println("The card has been excluded from the total calculated price.");
-        menu.addError("Could not find card \"" + card + "\"");
+        menu.addError(card);
     }
 
 }
