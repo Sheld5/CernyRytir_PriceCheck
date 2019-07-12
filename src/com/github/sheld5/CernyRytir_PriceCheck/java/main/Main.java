@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 
 import javax.swing.*;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 public class Main {
@@ -40,7 +41,7 @@ public class Main {
         frame.setVisible(true);
     }
 
-    public static int getTotalPrice(String cardList) {
+    public static int getTotalPrice(String cardList, boolean played, boolean nonenglish) {
         // Create String[] of all cards and int[] of their quantities
         Pattern pattern = Pattern.compile(QUANTITY_REGEX);
         Pattern spaces = Pattern.compile(" +");
@@ -76,52 +77,141 @@ public class Main {
             }
         }
 
+        // call getCardPrice() for each cards and calculate price total
         int priceTotal = 0;
         int previousTotal = 0;
         for (int i = 0; i < list.length; i++) {
-            try {
-                priceTotal += quantities[i] * getCardPrice(list[i]);
-                if (priceTotal > previousTotal) {
-                    menu.success(quantities[i]);
+            if (!list[i].equals("")) {
+                try {
+                    priceTotal += quantities[i] * getCardPrice(list[i], played, nonenglish);
+                    if (priceTotal > previousTotal) {
+                        menu.success(quantities[i]);
+                    }
+                    previousTotal = priceTotal;
+                } catch (IOException e) {
+                    throwError(list[i]);
                 }
-                previousTotal = priceTotal;
-            } catch (IOException e) {
-                throwError(list[i]);
             }
         }
         return priceTotal;
     }
 
-    // Finds the last page of the printings of the card and returns the last price on that page. (That is the lowest price on "cernyrytir.cz".)
-    private static int getCardPrice(String card) throws IOException {
-        if (card.equals("")) {
-            return 0;
-        }
+    // Find the lowest price for the card with the selected settings.
+    private static int getCardPrice(String card, boolean played, boolean nonenglish) throws IOException {
         int page = 0;
         String cardName = normalizeCardName(card);
         Document doc = Jsoup.connect(DEFAULT_URL_1 + (page * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
-        Elements ele = doc.getElementsByAttributeValue("class", "kusovkytext");
-        if (ele.size() == 2) {
+        Elements kusovkytext = doc.getElementsByAttributeValue("class", "kusovkytext");
+        // if there is only one page
+        if (kusovkytext.size() == 2) {
+            // if there are no cards on the page
             if (doc.getElementsByAttributeValue("class", "highslide").size() == 0) {
                 throwError(card);
                 return 0;
             } else {
-                return Integer.parseInt(ele.get(1).getElementsByTag("tr").last().getElementsByTag("td").get(2).text().replace(" Kč", ""));
+                int result = goThroughCards(kusovkytext.get(1).getElementsByTag("tr"), played, nonenglish);
+                if (result == 0) {
+                    throwError(card);
+                }
+                return result;
             }
+        // if there is more than one page
         } else {
+            // find the last page
             while (true) {
                 doc = Jsoup.connect(DEFAULT_URL_1 + ((page + 1) * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
                 if (doc.getElementsByAttributeValue("class", "highslide").size() == 0) {
-                    doc = Jsoup.connect(DEFAULT_URL_1 + (page * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
-                    ele = doc.getElementsByAttributeValue("class", "kusovkytext");
-                    int eleSize = ele.size();
-                    int target = eleSize - ((eleSize - 2) / 2) - 1;
-                    return Integer.parseInt(ele.get(target).getElementsByTag("tr").last().getElementsByTag("td").get(2).text().replace(" Kč", ""));
+                    break;
                 } else {
                     page++;
                 }
             }
+            // go through pages from last to first until a card matching the selected settings is found
+            while (true) {
+                doc = Jsoup.connect(DEFAULT_URL_1 + (page * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
+                kusovkytext = doc.getElementsByAttributeValue("class", "kusovkytext");
+                int target = kusovkytext.size() - ((kusovkytext.size() - 2) / 2) - 1;
+                int result = goThroughCards(kusovkytext.get(target).getElementsByTag("tr"), played, nonenglish);
+                if (result != 0) {
+                    return result;
+                } else if (page == 0) {
+                    throwError(card);
+                    return result;
+                } else {
+                    page--;
+                }
+            }
         }
+    }
+
+    private static int goThroughCards(Elements listRows, boolean played, boolean nonenglish) {
+        if (played && nonenglish) {
+            // return the last card
+            return Integer.parseInt(listRows.last().getElementsByTag("td").get(2).text().replace(" Kč", ""));
+        } else {
+            // go through all cards from the last to the first and find the first one that matches the selected settings
+            for (int cardFromLast = 0; cardFromLast < listRows.size() / 3; cardFromLast++) {
+                boolean[] cardAttributes = checkCardAttributes(listRows.get(listRows.size() - 1 - 2 - (cardFromLast * 3)).getElementsByTag("td").get(1).text());
+                boolean cardMatches;
+                if (!cardAttributes[0] && !cardAttributes[1]) {
+                    cardMatches = true;
+                } else {
+                    if ((cardAttributes[0] && !played) || (cardAttributes[1] && !nonenglish)) {
+                        cardMatches = false;
+                    } else {
+                        cardMatches = true;
+                    }
+                }
+                if (cardMatches) {
+                    return Integer.parseInt(listRows.get(listRows.size() - 1 - (cardFromLast * 3)).getElementsByTag("td").get(2).text().replace(" Kč", ""));
+                }
+            }
+            // if failed to find any card matching the selected settings
+            return 0;
+        }
+    }
+
+    private static boolean[] checkCardAttributes(String cardLabel) {
+        String[] words = cardLabel.split(" ");
+        int hyphenIndex = -1;
+        for (int i = 0; i < words.length; i++) {
+            if (words[i].equals("-")) {
+                hyphenIndex = i;
+            }
+        }
+        // {played, nonenglish}
+        boolean[] cardAttributes = new boolean[] {false, false};
+        // if there is no hyphen, card is normal
+        if (hyphenIndex == -1) {
+            return cardAttributes;
+        }
+        // go through words after the hyphen (card attributes)
+        ArrayList<Integer> slashIndexes = new ArrayList();
+        slashIndexes.add(hyphenIndex);
+        for (int i = hyphenIndex + 1; i < words.length; i++) {
+            if (words[i].equals("/")) {
+                slashIndexes.add(i);
+            }
+        }
+        slashIndexes.add(words.length);
+        // go through each part separated by slashes individually
+        for (int i = 0; i < slashIndexes.size() - 1; i++) {
+            boolean played = false;
+            boolean foil = false;
+            for (int o = slashIndexes.get(i) + 1; o < slashIndexes.get(i + 1); o++) {
+                if (words[o].equals("played")) {
+                    played = true;
+                } else if (words[o].equals("foil")) {
+                    foil = true;
+                }
+            }
+            if (played) {
+                cardAttributes[0] = true;
+            } else if (!foil) {
+                cardAttributes[1] = true;
+            }
+        }
+        return cardAttributes;
     }
 
     private static String normalizeCardName(String card) {

@@ -13,6 +13,9 @@ class Menu extends JPanel {
     private Font font;
     private JScrollPane textScrollPane;
     private JTextArea textArea;
+    private JPanel optionsPanel;
+    private JCheckBox playedBox;
+    private JCheckBox nonenglishBox;
     private JButton submit;
 
     private int successCount;
@@ -69,10 +72,23 @@ class Menu extends JPanel {
         c.gridy = 2;
         add(scrollPanel, c);
 
+        optionsPanel = new JPanel();
+        optionsPanel.setLayout(new FlowLayout());
+        optionsPanel.setPreferredSize(new Dimension(480, 32));
+
+        playedBox = new JCheckBox("include played cards");
+        nonenglishBox = new JCheckBox("include non-english cards");
+        optionsPanel.add(playedBox);
+        optionsPanel.add(nonenglishBox);
+
+        c.weighty = 1;
+        c.gridy = 3;
+        add(optionsPanel, c);
+
         submit = new JButton("Submit");
         submit.addActionListener(e -> submit());
         c.weighty = 1;
-        c.gridy = 3;
+        c.gridy = 4;
         add(submit, c);
 
     }
@@ -80,7 +96,7 @@ class Menu extends JPanel {
     private void submit() {
         clearErrors();
         price.setText("Price: 0 Kč");
-        price.setText("Price: " + Main.getTotalPrice(textArea.getText()) + " Kč");
+        price.setText("Price: " + Main.getTotalPrice(textArea.getText(), playedBox.isSelected(), nonenglishBox.isSelected()) + " Kč");
         if (errorCount > 0) {
             errors += "<br><br>Prices of these cards have not been included in the total price.";
             updateErrors();
