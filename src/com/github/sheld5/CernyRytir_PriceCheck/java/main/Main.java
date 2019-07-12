@@ -41,7 +41,8 @@ public class Main {
         frame.setVisible(true);
     }
 
-    public static int getTotalPrice(String cardList, boolean played, boolean nonenglish) {
+    // int played should have values 0 / 1 / 2 according to 'near mint' / 'lightly played' / 'played'
+    public static int getTotalPrice(String cardList, int played, boolean nonenglish) {
         // Create String[] of all cards and int[] of their quantities
         Pattern pattern = Pattern.compile(QUANTITY_REGEX);
         Pattern spaces = Pattern.compile(" +");
@@ -97,7 +98,7 @@ public class Main {
     }
 
     // Find the lowest price for the card with the selected settings.
-    private static int getCardPrice(String card, boolean played, boolean nonenglish) throws IOException {
+    private static int getCardPrice(String card, int played, boolean nonenglish) throws IOException {
         int page = 0;
         String cardName = normalizeCardName(card);
         Document doc = Jsoup.connect(DEFAULT_URL_1 + (page * 30) + DEFAULT_URL_2 + cardName + DEFAULT_URL_3).get();
@@ -144,23 +145,23 @@ public class Main {
         }
     }
 
-    private static int goThroughCards(Elements listRows, boolean played, boolean nonenglish) {
-        if (played && nonenglish) {
+    private static int goThroughCards(Elements listRows, int played, boolean nonenglish) {
+        if (played == 2 && nonenglish) {
             // return the last card
             return Integer.parseInt(listRows.last().getElementsByTag("td").get(2).text().replace(" Kč", ""));
         } else {
             // go through all cards from the last to the first and find the first one that matches the selected settings
             for (int cardFromLast = 0; cardFromLast < listRows.size() / 3; cardFromLast++) {
-                boolean[] cardAttributes = checkCardAttributes(listRows.get(listRows.size() - 1 - 2 - (cardFromLast * 3)).getElementsByTag("td").get(1).text());
+                int[] cardAttributes = checkCardAttributes(listRows.get(listRows.size() - 1 - 2 - (cardFromLast * 3)).getElementsByTag("td").get(1).text());
                 boolean cardMatches;
-                if (!cardAttributes[0] && !cardAttributes[1]) {
+                if (cardAttributes[0] == 0 && cardAttributes[1] == 0) {
                     cardMatches = true;
+                } else if (cardAttributes[0] > played) {
+                    cardMatches = false;
+                } else if (cardAttributes[1] == 1 && !nonenglish) {
+                    cardMatches = false;
                 } else {
-                    if ((cardAttributes[0] && !played) || (cardAttributes[1] && !nonenglish)) {
-                        cardMatches = false;
-                    } else {
-                        cardMatches = true;
-                    }
+                    cardMatches = true;
                 }
                 if (cardMatches) {
                     return Integer.parseInt(listRows.get(listRows.size() - 1 - (cardFromLast * 3)).getElementsByTag("td").get(2).text().replace(" Kč", ""));
@@ -171,7 +172,8 @@ public class Main {
         }
     }
 
-    private static boolean[] checkCardAttributes(String cardLabel) {
+    // returns int[] {cardCondition, nonenglish} with values 0,1,2 for cardCondition and 0,1 for nonenglish
+    private static int[] checkCardAttributes(String cardLabel) {
         String[] words = cardLabel.split(" ");
         int hyphenIndex = -1;
         for (int i = 0; i < words.length; i++) {
@@ -180,7 +182,7 @@ public class Main {
             }
         }
         // {played, nonenglish}
-        boolean[] cardAttributes = new boolean[] {false, false};
+        int[] cardAttributes = new int[] {0, 0};
         // if there is no hyphen, card is normal
         if (hyphenIndex == -1) {
             return cardAttributes;
@@ -196,19 +198,24 @@ public class Main {
         slashIndexes.add(words.length);
         // go through each part separated by slashes individually
         for (int i = 0; i < slashIndexes.size() - 1; i++) {
+            boolean lightly = false;
             boolean played = false;
             boolean foil = false;
             for (int o = slashIndexes.get(i) + 1; o < slashIndexes.get(i + 1); o++) {
-                if (words[o].equals("played")) {
+                if (words[o].equals("lightly")) {
+                    lightly = true;
+                } else if (words[o].equals("played")) {
                     played = true;
                 } else if (words[o].equals("foil")) {
                     foil = true;
                 }
             }
-            if (played) {
-                cardAttributes[0] = true;
+            if (lightly) {
+                cardAttributes[0] = 1;
+            } else if (played) {
+                cardAttributes[0] = 2;
             } else if (!foil) {
-                cardAttributes[1] = true;
+                cardAttributes[1] = 1;
             }
         }
         return cardAttributes;

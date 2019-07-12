@@ -5,7 +5,6 @@ import java.awt.*;
 
 class Menu extends JPanel {
 
-    private JLabel label;
     private JLabel price;
     private JPanel scrollPanel;
     private JScrollPane outputScrollPane;
@@ -14,7 +13,11 @@ class Menu extends JPanel {
     private JScrollPane textScrollPane;
     private JTextArea textArea;
     private JPanel optionsPanel;
-    private JCheckBox playedBox;
+    private JPanel playedPanel;
+    private ButtonGroup playedGroup;
+    private JRadioButton nearMintButton;
+    private JRadioButton lightlyPlayedButton;
+    private JRadioButton playedButton;
     private JCheckBox nonenglishBox;
     private JButton submit;
 
@@ -32,13 +35,6 @@ class Menu extends JPanel {
         c.ipady = 24;
 
         font = new Font(Font.SANS_SERIF, Font.BOLD, 18);
-
-        label = new JLabel("\"Černý Rytíř\" deck price calculator");
-        label.setFont(font);
-        label.setForeground(Color.orange);
-        c.weighty = 1;
-        c.gridy = 0;
-        add(label, c);
 
         price = new JLabel("Price: 0 Kč");
         price.setFont(font);
@@ -74,11 +70,26 @@ class Menu extends JPanel {
 
         optionsPanel = new JPanel();
         optionsPanel.setLayout(new FlowLayout());
-        optionsPanel.setPreferredSize(new Dimension(480, 32));
+        optionsPanel.setPreferredSize(new Dimension(480, 58));
 
-        playedBox = new JCheckBox("include played cards");
+        playedPanel = new JPanel();
+        playedPanel.setLayout(new BoxLayout(playedPanel, BoxLayout.Y_AXIS));
+
+        playedGroup = new ButtonGroup();
+        nearMintButton = new JRadioButton("near mint");
+        lightlyPlayedButton = new JRadioButton("lightly played");
+        playedButton = new JRadioButton("played");
+        playedGroup.add(nearMintButton);
+        playedGroup.add(lightlyPlayedButton);
+        playedGroup.add(playedButton);
+        nearMintButton.setSelected(true);
+
+        playedPanel.add(nearMintButton);
+        playedPanel.add(lightlyPlayedButton);
+        playedPanel.add(playedButton);
+        optionsPanel.add(playedPanel);
+
         nonenglishBox = new JCheckBox("include non-english cards");
-        optionsPanel.add(playedBox);
         optionsPanel.add(nonenglishBox);
 
         c.weighty = 1;
@@ -96,7 +107,17 @@ class Menu extends JPanel {
     private void submit() {
         clearErrors();
         price.setText("Price: 0 Kč");
-        price.setText("Price: " + Main.getTotalPrice(textArea.getText(), playedBox.isSelected(), nonenglishBox.isSelected()) + " Kč");
+        int cardCondition;
+        if (nearMintButton.isSelected()) {
+            cardCondition = 0;
+        } else if (lightlyPlayedButton.isSelected()) {
+            cardCondition = 1;
+        } else if (playedButton.isSelected()){
+            cardCondition = 2;
+        } else {
+            cardCondition = 0;
+        }
+        price.setText("Price: " + Main.getTotalPrice(textArea.getText(), cardCondition, nonenglishBox.isSelected()) + " Kč");
         if (errorCount > 0) {
             errors += "<br><br>Prices of these cards have not been included in the total price.";
             updateErrors();
