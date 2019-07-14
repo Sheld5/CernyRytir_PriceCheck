@@ -15,7 +15,6 @@ public class Main {
     private static final String DEFAULT_URL_1 = "http://cernyrytir.cz/index.php3?akce=3&limit=";
     private static final String DEFAULT_URL_2 = "&searchtype=card&searchname=";
     private static final String DEFAULT_URL_3 = "&hledej_pouze_magic=1&submit=Vyhledej";
-    private static final String QUANTITY_REGEX = "^[0-9]+[x]?$";
 
     private static final String FRAME_TITLE = "   \"Černý Rytíř\" deck price calculator";
     private static final int DEFAULT_WIDTH = 500;
@@ -44,8 +43,9 @@ public class Main {
     // int played should have values 0 / 1 / 2 according to 'near mint' / 'lightly played' / 'played'
     public static int getTotalPrice(String cardList, int played, boolean nonenglish) {
         // Create String[] of all cards and int[] of their quantities
-        Pattern pattern = Pattern.compile(QUANTITY_REGEX);
-        Pattern spaces = Pattern.compile(" +");
+        Pattern quantity = Pattern.compile("^[0-9]+[x]?$");
+        Pattern spaces = Pattern.compile("^ +$");
+        Pattern expansionCode = Pattern.compile("^\\([A-Z0-9]{3}\\)$");
         String[] list = cardList.split("\n");
         int[] quantities = new int[list.length];
         for (int i = 0; i < list.length; i++) {
@@ -53,22 +53,23 @@ public class Main {
                 list[i] = "";
             }
             String[] words = list[i].split(" ");
+            if (quantity.matcher(words[0]).matches()) {
+                quantities[i] = Integer.parseInt(words[0].replace("x", ""));
+                words[0] = "";
+            } else {
+                quantities[i] = 1;
+            }
             for (int o = 0; o < words.length; o++) {
                 words[o].replace(" ", "");
                 if (words[o].equals("/")) {
                     words[o] = "//";
+                } else if (expansionCode.matcher(words[o]).matches()) {
+                    words[o] = "";
                 }
-            }
-            if (pattern.matcher(words[0]).matches()) {
-                quantities[i] = Integer.parseInt(words[0].replace("x", ""));
-            } else {
-                quantities[i] = 1;
             }
             list[i] = "";
             for (String word : words) {
-                if (pattern.matcher(word).matches() || word.equals("")) {
-                    // nada
-                } else {
+                if (!word.equals("")) {
                     if (list[i].equals("")) {
                         list[i] = word;
                     } else {
@@ -76,6 +77,7 @@ public class Main {
                     }
                 }
             }
+            System.out.println(list[i]);
         }
 
         // call getCardPrice() for each cards and calculate price total
