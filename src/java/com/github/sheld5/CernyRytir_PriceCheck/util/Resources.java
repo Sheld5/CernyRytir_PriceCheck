@@ -1,4 +1,4 @@
-package com.github.sheld5.CernyRytir_PriceCheck.java.util;
+package com.github.sheld5.CernyRytir_PriceCheck.util;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

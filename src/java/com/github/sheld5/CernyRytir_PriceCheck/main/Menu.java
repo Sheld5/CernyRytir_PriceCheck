@@ -1,4 +1,4 @@
-package com.github.sheld5.CernyRytir_PriceCheck.java.main;
+package com.github.sheld5.CernyRytir_PriceCheck.main;
 
 import javax.swing.*;
 import java.awt.*;

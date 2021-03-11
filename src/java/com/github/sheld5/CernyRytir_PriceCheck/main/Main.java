@@ -1,6 +1,6 @@
-package com.github.sheld5.CernyRytir_PriceCheck.java.main;
+package com.github.sheld5.CernyRytir_PriceCheck.main;
 
-import com.github.sheld5.CernyRytir_PriceCheck.java.util.Resources;
+import com.github.sheld5.CernyRytir_PriceCheck.util.Resources;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -21,12 +21,12 @@ public class Main {
     private static final int DEFAULT_HEIGHT = 500;
 
     private static JFrame frame;
-    private static com.github.sheld5.CernyRytir_PriceCheck.java.main.Menu menu;
+    private static com.github.sheld5.CernyRytir_PriceCheck.main.Menu menu;
 
     public static void main(String[] args) {
         Resources.load();
         initFrame();
-        menu = new com.github.sheld5.CernyRytir_PriceCheck.java.main.Menu();
+        menu = new com.github.sheld5.CernyRytir_PriceCheck.main.Menu();
         frame.add(menu);
         frame.revalidate();
     }

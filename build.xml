@@ -23,7 +23,7 @@
             </classpath>
         </javac>
         <copy todir="out/production/CernyRytir_PriceCheck" >
-            <fileset dir="src/com/github/sheld5/CernyRytir_PriceCheck/resources" includes="**"/>
+            <fileset dir="src/resources" includes="**"/>
         </copy>
     </target>
 
@@ -35,7 +35,7 @@
             <fileset dir="out/production/CernyRytir_PriceCheck" includes="**" />
             <zipgroupfileset dir="lib" includes="jsoup-1.12.1.jar" />
             <manifest>
-                <attribute name="Main-Class" value="com.github.sheld5.CernyRytir_PriceCheck.java.main.Main" />
+                <attribute name="Main-Class" value="com.github.sheld5.CernyRytir_PriceCheck.main.Main" />
             </manifest>
         </jar>
     </target>
